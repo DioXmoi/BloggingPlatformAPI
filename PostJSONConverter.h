@@ -23,7 +23,7 @@ namespace PostJSONConverter {
 		j["Title"] = post.GetTitle();
 		j["Content"] = post.GetContent();
 		j["Category"] = Utility::ToString(post.GetCategory());
-		j["Tags"] = post.GetTags();
+		j["Tags"] = post.GetTags().GetData();
 		j["CreatedAt"] = Utility::ToString(post.GetCreatedAt());
 		j["UpdatedAt"] = Utility::ToString(post.GetUpdateAt());
 
@@ -42,16 +42,17 @@ namespace PostJSONConverter {
 		return j;
 	}
 
-	//From json without CreatedAt and UpdatedAt
-	inline Post Parse(std::string_view str) {
+
+	inline Post ParseForHttpPost(std::string_view str) {
 		json j{ json::parse(str) };
 
-		ID id{ j.at("ID").get<ID>() };
-		std::string title{ j.at("Title").get<std::string>() };
-		std::string content{ j.at("Content").get<std::string>() };
-		Post::Category category{ Utility::FromString(j.at("Category").get<std::string>()) };
-		std::string tags{ j.at("Tags").get<std::string>() };
+		Post post{ };
 
-		return Post{ id, title, content, category, tags };
+		post.SetTitle(j.at("Title").get<std::string>());
+		post.SetContent(j.at("Content").get<std::string>());
+		post.SetCategory(Utility::FromString(j.at("Category").get<std::string>()));
+		post.SetTags(Utility::CreateTags(j.at("Tags").get<std::vector<std::string>>()));
+
+		return post;
 	}
 }

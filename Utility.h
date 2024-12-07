@@ -18,7 +18,6 @@ namespace Utility {
 		return stream.str();
 	}
 
-
 	inline std::string ToString(Post::Category category) {
 		constexpr auto names = std::array{ "None",
 			"Inspiration",
@@ -82,5 +81,12 @@ namespace Utility {
 		return static_cast<Post::Category>(std::distance(names.begin(), it));
 	}
 
+	inline Post::Tags CreateTags(const std::vector<std::string>& data) {
+		Post::Tags tags;
+		for (const auto& tag : data) {
+			tags.Add(tag);
+		}
 
+		return tags;
+	}
 }

@@ -1,7 +1,9 @@
 #pragma once
 
 
+#include <algorithm>
 #include <chrono>
+#include <vector>
 #include <string>
 #include <string_view>
 
@@ -38,11 +40,35 @@ public:
 		MAX_CATEGORY
 	};
 
+
+	class Tags {
+	public:
+		bool Add(std::string_view tag) { 
+			if (tag.empty()) { return false; }
+			auto found{ std::ranges::find(m_data, tag) };
+			if (found != m_data.end()) {
+				return false;
+			}
+
+			m_data.push_back(tag.data());
+
+			return true;
+		}
+
+		const std::vector<std::string>& GetData() const { return m_data; }
+
+	private:
+		std::vector<std::string> m_data;
+	};
+
+
+	Post() = default;
+
 	Post(ID id,
 		std::string_view title,
 		std::string_view content,
-		Category category,
-		std::string_view tags = "",
+		Category category = Category::None,
+		Tags tags = Tags(),
 		const DateTime& createdAt = std::chrono::system_clock::now(),
 		const DateTime& updateAt = std::chrono::system_clock::now()
 	)
@@ -54,7 +80,6 @@ public:
 		, m_createdAt{ createdAt }
 		, m_updateAt{ updateAt }
 	{
-
 	}
 
 
@@ -63,7 +88,7 @@ public:
 	std::string GetTitle() const { return m_title; }
 	std::string GetContent() const { return m_content; }
 	Category GetCategory() const { return m_category; }
-	std::string GetTags() const { return m_tags; }
+	Tags GetTags() const { return m_tags; }
 	DateTime GetCreatedAt() const { return m_createdAt; }
 	DateTime GetUpdateAt() const { return m_updateAt; }
 
@@ -101,11 +126,7 @@ public:
 		return true;
 	}
 
-	bool SetTags(std::string_view tags) {
-		if (tags.empty()) {
-			return false;
-		}
-
+	bool SetTags(Tags tags) {
 		UpdateDateTime();
 		m_tags = tags;
 
@@ -122,7 +143,7 @@ private:
 	std::string m_title{ };
 	std::string m_content{ };
 	Category m_category{ };
-	std::string m_tags{ };
+	Tags m_tags{ };
 	DateTime m_createdAt{ };
 	DateTime m_updateAt{ };
 

@@ -45,13 +45,4 @@ namespace Api {
 		// Send a TCP shutdown
 		socket.shutdown(tcp::socket::shutdown_send, ec);
 	}
-
-
-	bool IsValidHttpMethod(http::verb method) {
-		return method == http::verb::get ||
-			method == http::verb::post ||
-			method == http::verb::put ||
-			method == http::verb::patch ||
-			method == http::verb::delete_;
-	}
 }

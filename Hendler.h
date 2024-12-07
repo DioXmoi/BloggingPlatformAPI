@@ -33,10 +33,6 @@ namespace Api {
 	// Handles an HTTP server connection
 	void ClientSession(tcp::socket socket);
 
-	bool IsValidHttpMethod(http::verb method);
-
-
-
 	// Returns a bad request response
 	template <class Body, class Allocator>
 	inline http::response<http::string_body> GenerateBadRequest(
@@ -94,7 +90,7 @@ namespace Api {
 		}
 
 		try {
-			Post newPost{ PostJSONConverter::Parse(req.body()) };
+			Post newPost{ PostJSONConverter::ParseForHttpPost(req.body()) };
 
 			//Add method add DB
 
