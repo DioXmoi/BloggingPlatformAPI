@@ -89,4 +89,20 @@ namespace Utility {
 
 		return tags;
 	}
+
+	inline std::string FormatArray(const std::vector<std::string>& data) {
+		if (data.empty()) { return "{}"; }
+
+		std::string buffer{ "{" };
+		for (std::size_t i{ 0 }; i < data.size(); ++i) {
+			buffer += "\"" + data[i] + "\"";
+			if (i < data.size() - 1) {
+				buffer += ", ";
+			}
+		}
+
+		buffer += '}';
+
+		return buffer;
+	}
 }
