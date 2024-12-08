@@ -14,6 +14,8 @@
 #include <string>
 
 
+#include "Database.h"
+#include "SqlException.h"
 #include "Post.h"
 #include "PostJSONConverter.h"
 
@@ -90,16 +92,22 @@ namespace Api {
 		}
 
 		try {
-			Post newPost{ PostJSONConverter::ParseForHttpPost(req.body()) };
+			Post post{ PostJSONConverter::ParseForHttpPost(req.body()) };
 
-			//Add method add DB
+			Database db;
+
+			std::string json = db.Insert(post);
 
 			http::response<http::string_body> res{ http::status::created, req.version() };
 			res.set(http::field::content_type, "application/json");
 			res.keep_alive(req.keep_alive());
-			res.body() = PostJSONConverter::Serialize(newPost);
+			res.body() = json;
 			res.prepare_payload();
 			return res;
+		}
+		catch (const SqlException& e) {
+			std::cerr << "[SERVER] Exception: " << e.what() << ", Detail: " << e.GetDetail() << '\n';
+			return GenerateBadRequest(req, "Failed to process Database");
 		}
 		catch (const nlohmann::json::out_of_range& e) {
 			std::cerr << "[SERVER] Exception: Key not found: " << e.what() << "\n";
