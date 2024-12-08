@@ -19,13 +19,13 @@ namespace PostJSONConverter {
 	inline std::string Serialize(const Post& post) {
 		json j;
 
-		j["ID"] = post.GetID();
-		j["Title"] = post.GetTitle();
-		j["Content"] = post.GetContent();
-		j["Category"] = Utility::ToString(post.GetCategory());
-		j["Tags"] = post.GetTags().GetData();
-		j["CreatedAt"] = Utility::ToString(post.GetCreatedAt());
-		j["UpdatedAt"] = Utility::ToString(post.GetUpdateAt());
+		j["id"] = post.GetID();
+		j["title"] = post.GetTitle();
+		j["content"] = post.GetContent();
+		j["category"] = Utility::ToString(post.GetCategory());
+		j["tags"] = post.GetTags().GetData();
+		j["createdAt"] = Utility::ToString(post.GetCreatedAt());
+		j["updatedAt"] = Utility::ToString(post.GetUpdateAt());
 
 		return j.dump(4);
 	}
@@ -48,10 +48,10 @@ namespace PostJSONConverter {
 
 		Post post{ };
 
-		post.SetTitle(j.at("Title").get<std::string>());
-		post.SetContent(j.at("Content").get<std::string>());
-		post.SetCategory(Utility::FromString(j.at("Category").get<std::string>()));
-		post.SetTags(Utility::CreateTags(j.at("Tags").get<std::vector<std::string>>()));
+		post.SetTitle(j.at("title").get<std::string>());
+		post.SetContent(j.at("content").get<std::string>());
+		post.SetCategory(Utility::FromString(j.at("category").get<std::string>()));
+		post.SetTags(Utility::CreateTags(j.at("tags").get<std::vector<std::string>>()));
 
 		return post;
 	}
