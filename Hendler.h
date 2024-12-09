@@ -35,7 +35,7 @@ namespace Api {
 	// Handles an HTTP server connection
 	void ClientSession(tcp::socket socket);
 
-	// Returns a bad request response
+	// 400 Returns a bad request response
 	template <class Body, class Allocator>
 	inline http::response<http::string_body> GenerateBadRequest(
 		const http::request<Body, http::basic_fields<Allocator>>& req,
@@ -67,7 +67,7 @@ namespace Api {
 		return res;
 	}
 
-	//404 NOT FOUND
+	// 404 NOT FOUND
 	template <class Body, class Allocator>
 	inline http::response<http::string_body> GenerateNotFound(
 		const http::request<Body, http::basic_fields<Allocator>>& req, std::string_view why) {
@@ -98,11 +98,11 @@ namespace Api {
 
 			std::string json = db.Insert(post);
 
-			http::response<http::string_body> res{ http::status::created, req.version() };
-			res.set(http::field::content_type, "application/json");
-			res.keep_alive(req.keep_alive());
-			res.body() = json;
-			res.prepare_payload();
+			http::response<http::string_body> res{ http::status::created, req.version() }; //Create method 
+			res.set(http::field::content_type, "application/json"); //,
+			res.keep_alive(req.keep_alive());//,
+			res.body() = json;//,
+			res.prepare_payload();//,
 			return res;
 		}
 		catch (const SqlException& e) {
@@ -124,9 +124,33 @@ namespace Api {
 	template <class Body, class Allocator>
 	inline http::response<http::string_body> HandleGetPosts(
 		const http::request<Body, http::basic_fields<Allocator>>& req) {
+		try {
+			Database db;
+			std::string json{ db.Select() };
 
-
-		return GenerateMethodNotAllowed(req);
+			http::response<http::string_body> res{ http::status::ok, req.version() };
+			res.set(http::field::content_type, "application/json");
+			res.keep_alive(req.keep_alive());
+			res.body() = json;
+			res.prepare_payload();
+			return res;
+		}
+		catch (const SqlEmptyAnswer& e) {
+			std::cerr << "[SERVER] Exception: " << e.what() << ", Detail: " << e.GetDetail() << '\n';
+			return GenerateNotFound(req, "Table is empty");
+		}
+		catch (const SqlException& e) {
+			std::cerr << "[SERVER] Exception: " << e.what() << ", Detail: " << e.GetDetail() << '\n';
+			return GenerateBadRequest(req, "Failed to process Database");
+		}
+		catch (const nlohmann::json::out_of_range& e) {
+			std::cerr << "[SERVER] Exception: Key not found: " << e.what() << "\n";
+			return GenerateBadRequest(req, "Invalid post data");
+		}
+		catch (const std::exception& e) {
+			std::cerr << "[SERVER] Exception: during GET request processing: " << e.what() << "\n";
+			return GenerateBadRequest(req, "Failed to process request");
+		}
 	}
 
 	// Function to handle requests to /posts
@@ -148,27 +172,107 @@ namespace Api {
 	template <class Body, class Allocator>
 	inline http::response<http::string_body> HandleGetPostsByID(
 		const http::request<Body, http::basic_fields<Allocator>>& req, ID id) {
+		try {
+			Database db;
+			std::string json{ db.Select(id) };
 
-		id += 1;
-		return GenerateMethodNotAllowed(req);
+			http::response<http::string_body> res{ http::status::ok, req.version() };
+			res.set(http::field::content_type, "application/json");
+			res.keep_alive(req.keep_alive());
+			res.body() = json;
+			res.prepare_payload();
+			return res;
+		}
+		catch (const SqlEmptyAnswer& e) {
+			std::cerr << "[SERVER] Exception: " << e.what() << ", Detail: " << e.GetDetail() << '\n';
+			return GenerateNotFound(req, "id not found - " + std::to_string(id));
+		}
+		catch (const SqlException& e) {
+			std::cerr << "[SERVER] Exception: " << e.what() << ", Detail: " << e.GetDetail() << '\n';
+			return GenerateBadRequest(req, "Failed to process Database");
+		}
+		catch (const nlohmann::json::out_of_range& e) {
+			std::cerr << "[SERVER] Exception: Key not found: " << e.what() << "\n";
+			return GenerateBadRequest(req, "Invalid post data");
+		}
+		catch (const std::exception& e) {
+			std::cerr << "[SERVER] Exception: during GET request processing: " << e.what() << "\n";
+			return GenerateBadRequest(req, "Failed to process request");
+		}
 	}
 
 	// Handle PUT /posts/{ ID }
 	template <class Body, class Allocator>
 	inline http::response<http::string_body> HandlePutPostsByID(
 		const http::request<Body, http::basic_fields<Allocator>>& req, ID id) {
+		if (req.body().empty()) {
+			return GenerateBadRequest(req, "Empty request body");
+		}
 
-		id += 1;
-		return GenerateMethodNotAllowed(req);
+		try {
+			Database db;
+
+			Post post{ PostJSONConverter::ParseForHttpPost(req.body()) };
+			post.SetId(id);
+
+			std::string json = db.Update(post);
+
+			http::response<http::string_body> res{ http::status::ok, req.version() }; //OK method 
+			res.set(http::field::content_type, "application/json"); //,
+			res.keep_alive(req.keep_alive());//,
+			res.body() = json;//,
+			res.prepare_payload();//,
+
+			return res;
+		}
+		catch (const SqlEmptyAnswer& e) {
+			std::cerr << "[SERVER] Exception: " << e.what() << ", Detail: " << e.GetDetail() << '\n';
+			return GenerateNotFound(req, "id not found - " + std::to_string(id));
+		}
+		catch (const SqlException& e) {
+			std::cerr << "[SERVER] Exception: " << e.what() << ", Detail: " << e.GetDetail() << '\n';
+			return GenerateBadRequest(req, "Failed to process Database");
+		}
+		catch (const nlohmann::json::out_of_range& e) {
+			std::cerr << "[SERVER] Exception: Key not found: " << e.what() << "\n";
+			return GenerateBadRequest(req, "Invalid post data");
+		}
+		catch (const std::exception& e) {
+			std::cerr << "[SERVER] Exception: during PUT request processing: " << e.what() << "\n";
+			return GenerateBadRequest(req, "Failed to process request");
+		}
 	}
 
 	// Handle DELETE /posts/{ ID }
 	template <class Body, class Allocator>
 	inline http::response<http::string_body> HandleDeletePostsByID(
 		const http::request<Body, http::basic_fields<Allocator>>& req, ID id) {
+		try {
+			Database db;
+			db.Delete(id);
 
-		id += 1;
-		return GenerateMethodNotAllowed(req);
+			http::response<http::string_body> res{ http::status::no_content, req.version() };
+			res.keep_alive(req.keep_alive());
+			res.prepare_payload();
+
+			return res;
+		}
+		catch (const SqlEmptyAnswer& e) {
+			std::cerr << "[SERVER] Exception: " << e.what() << ", Detail: " << e.GetDetail() << '\n';
+			return GenerateNotFound(req, "id not found - " + std::to_string(id));
+		}
+		catch (const SqlException& e) {
+			std::cerr << "[SERVER] Exception: " << e.what() << ", Detail: " << e.GetDetail() << '\n';
+			return GenerateBadRequest(req, "Failed to process Database");
+		}
+		catch (const nlohmann::json::out_of_range& e) {
+			std::cerr << "[SERVER] Exception: Key not found: " << e.what() << "\n";
+			return GenerateBadRequest(req, "Invalid post data");
+		}
+		catch (const std::exception& e) {
+			std::cerr << "[SERVER] Exception: during DELETE request processing: " << e.what() << "\n";
+			return GenerateBadRequest(req, "Failed to process request");
+		}
 	}
 
 	// Function to handle requests to /posts/{ ID }

@@ -133,6 +133,14 @@ public:
 		return true;
 	}
 
+	//Needed in the UPDATE query Post
+	bool SetId(ID id) { 
+		UpdateDateTime();
+		m_id = id; 
+
+		return true;
+	}
+
 private:
 
 	void UpdateDateTime() { m_updateAt = std::chrono::system_clock::now(); }
