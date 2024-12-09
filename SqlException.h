@@ -16,3 +16,11 @@ public:
 private:
     std::string m_detail;
 };
+
+class SqlEmptyAnswer : public SqlException {
+public:
+    SqlEmptyAnswer(const std::string& message, const std::string& detail = "")
+        : SqlException{ message, detail }
+    {
+    }
+};
