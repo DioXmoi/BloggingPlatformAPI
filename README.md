@@ -120,8 +120,31 @@ All endpoints use standard HTTP methods and return JSON-formatted responses.
 ]
 
 ```
+### Database structure
+
+```
+create type categoryType as enum ('None', 'Inspiration', 'Reflections',
+	'Travel', 'Creativity', 'Food', 'News',
+	'Education', 'Technology', 'Health', 'Career',
+	'Humor', 'Movies', 'TVSeries', 'Music',
+	'Games', 'Animals', 'Beauty', 'HomeDecor',
+	'Books', 'Sports', 'Art'
+);
+
+CREATE TABLE Posts
+(
+	Id SERIAL PRIMARY KEY,
+	Title varchar(70) NOT NULL,
+	Content varchar(450),
+	Category categoryType DEFAULT 'None',
+	Tags varchar(20)[],
+	CreatedAt timestamp DEFAULT CURRENT_TIMESTAMP,
+	UpdatedAt timestamp DEFAULT CURRENT_TIMESTAMP
+);
+```
 
 ### Contribution Guidelines
+
 Contributions are welcome! Please open an issue to discuss proposed changes before submitting a pull request.  Pull requests should include clear descriptions of the changes made.
 
 I am particularly interested in improvements related to:
