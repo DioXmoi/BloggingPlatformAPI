@@ -143,10 +143,6 @@ namespace Api {
 			std::cerr << "[SERVER] Exception: " << e.what() << ", Detail: " << e.GetDetail() << '\n';
 			return GenerateBadRequest(req, "Failed to process Database");
 		}
-		catch (const nlohmann::json::out_of_range& e) {
-			std::cerr << "[SERVER] Exception: Key not found: " << e.what() << "\n";
-			return GenerateBadRequest(req, "Invalid post data");
-		}
 		catch (const std::exception& e) {
 			std::cerr << "[SERVER] Exception: during GET request processing: " << e.what() << "\n";
 			return GenerateBadRequest(req, "Failed to process request");
@@ -190,10 +186,6 @@ namespace Api {
 		catch (const SqlException& e) {
 			std::cerr << "[SERVER] Exception: " << e.what() << ", Detail: " << e.GetDetail() << '\n';
 			return GenerateBadRequest(req, "Failed to process Database");
-		}
-		catch (const nlohmann::json::out_of_range& e) {
-			std::cerr << "[SERVER] Exception: Key not found: " << e.what() << "\n";
-			return GenerateBadRequest(req, "Invalid post data");
 		}
 		catch (const std::exception& e) {
 			std::cerr << "[SERVER] Exception: during GET request processing: " << e.what() << "\n";
@@ -265,10 +257,6 @@ namespace Api {
 			std::cerr << "[SERVER] Exception: " << e.what() << ", Detail: " << e.GetDetail() << '\n';
 			return GenerateBadRequest(req, "Failed to process Database");
 		}
-		catch (const nlohmann::json::out_of_range& e) {
-			std::cerr << "[SERVER] Exception: Key not found: " << e.what() << "\n";
-			return GenerateBadRequest(req, "Invalid post data");
-		}
 		catch (const std::exception& e) {
 			std::cerr << "[SERVER] Exception: during DELETE request processing: " << e.what() << "\n";
 			return GenerateBadRequest(req, "Failed to process request");
@@ -302,6 +290,41 @@ namespace Api {
 		return GenerateMethodNotAllowed(req);
 	}
 	
+	// Handle GET posts?term={ data }
+	template <class Body, class Allocator>
+	inline http::response<http::string_body> HandleGetPostsBySearchTerm(
+		const http::request<Body, http::basic_fields<Allocator>>& req, std::string term) {
+		if (term.empty()) {
+			return GenerateBadRequest(req, "Empty term");
+		}
+
+		try {
+			Database db;
+
+			std::string json = db.Select(term);
+
+			http::response<http::string_body> res{ http::status::ok, req.version() };
+			res.set(http::field::content_type, "application/json"); 
+			res.keep_alive(req.keep_alive());
+			res.body() = json;
+			res.prepare_payload();
+
+			return res;
+		}
+		catch (const SqlEmptyAnswer& e) {
+			std::cerr << "[SERVER] Exception: " << e.what() << ", Detail: " << e.GetDetail() << '\n';
+			return GenerateNotFound(req, "not found post with text - " + term);
+		}
+		catch (const SqlException& e) {
+			std::cerr << "[SERVER] Exception: " << e.what() << ", Detail: " << e.GetDetail() << '\n';
+			return GenerateBadRequest(req, "Failed to process Database");
+		}
+		catch (const std::exception& e) {
+			std::cerr << "[SERVER] Exception: during DELETE request processing: " << e.what() << "\n";
+			return GenerateBadRequest(req, "Failed to process request");
+		}
+	}
+
 	// Return a response for the given request.
 	//
 	// The concrete type of the response message (which depends on the request), is type-erased in message_generator.
@@ -312,6 +335,9 @@ namespace Api {
 		auto target{ req.target() };
 		if (target == "/posts") {
 			return HandlePostsRequest(req);
+		}
+		else if (target.find("/posts?term=") != std::string::npos) {
+			return HandleGetPostsBySearchTerm(req, target.substr(12));
 		}
 		else if (target.starts_with("/posts/")) {
 			return HandlePostsIDRequest(req);

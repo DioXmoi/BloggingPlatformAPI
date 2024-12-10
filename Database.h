@@ -79,6 +79,17 @@ public:
 		return query.Send(m_connection, NULL);
 	}
 
+	//return json post
+	std::string Select(const std::string& term) const {
+		SqlQuerySender query{
+			"SELECT json_agg(to_json(posts.*)) FROM posts WHERE title ILIKE $1 OR content ILIKE $1 OR category::TEXT ILIKE $1",
+			SqlQueryData{ std::vector<std::string> { "%" + term + "%" } }
+		};
+
+		const int formats[] = { 0 };
+		return query.Send(m_connection, formats);
+	}
+
 private:
 
 	class SqlQueryData {
